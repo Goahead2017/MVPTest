@@ -12,6 +12,7 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 
 /**
@@ -85,7 +86,10 @@ public class DrawView extends View{
         });
         anim2.start();
 
+        Log.d("onDraw","我是构造方法");
+
     }
+
 
     @SuppressLint("ResourceAsColor")
     private void init() {
@@ -182,6 +186,7 @@ public class DrawView extends View{
     @SuppressLint("DrawAllocation")
     protected void onDraw(Canvas canvas){
         super.onDraw(canvas);
+        Log.d("onDraw","我是绘制方法");
 
         //获取屏幕长宽
         X = getWidth();
@@ -228,16 +233,19 @@ public class DrawView extends View{
 
         //绘制小太阳
         oval = new RectF(100 - currentValue1 / 10,100 - currentValue1 /10,100 + currentValue1 / 10,100 + currentValue1 / 10);
-        currentValue1 += currentValue1;
-        path1.addArc(oval,-90 + currentValue1,180);
-        canvas.drawPath(path1,paint1);
-
-        canvas.translate(100,100);
-        for(int i = 0;i <= (int)currentValue1 / 40 * 20;i += 20){
-            canvas.drawLine(0,40,0,80,paint1);
-            canvas.rotate(20);
+        if(currentValue1 < 720.0) {
+            currentValue1 += currentValue1;
+            path1.addArc(oval, -90 + currentValue1, 180);
+            canvas.drawPath(path1, paint1);
+        }else {
+            canvas.drawPath(path1,paint1);
         }
 
+            canvas.translate(100, 100);
+            for (int i = 0; i <= (int) currentValue1 / 40 * 20; i += 20) {
+                canvas.drawLine(0, 40, 0, 80, paint1);
+                canvas.rotate(20);
+            }
 
     }
 

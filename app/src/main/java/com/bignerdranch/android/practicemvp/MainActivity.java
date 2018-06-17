@@ -65,11 +65,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void loginFailure() {
-        Toast.makeText(this,"账号或密码错误请重新输入",Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(),"账号或密码错误请重新输入",Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void loginSuccess() {
-        Toast.makeText(this,"登录成功",Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(),"登录成功",Toast.LENGTH_SHORT).show();
     }
 }

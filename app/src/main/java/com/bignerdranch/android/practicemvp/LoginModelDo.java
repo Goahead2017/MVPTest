@@ -10,11 +10,11 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 
 import org.json.JSONObject;
-
-import static android.content.ContentValues.TAG;
 
 /**
  * M层
@@ -23,6 +23,7 @@ import static android.content.ContentValues.TAG;
 public class LoginModelDo implements LoginModel {
 
     private HashMap<String, String> params;
+    private final String TAG = "LoginPresenterDo";
 
     public static String sendHttpPost(final String urls, final Map<String, String> map) {
         byte[] data = getRequestData(map, "utf-8").toString().getBytes();//获得请求体
@@ -86,54 +87,60 @@ public class LoginModelDo implements LoginModel {
         return stringBuffer;
     }
 
-    /*
-     * Function  :   处理服务器的响应结果（将输入流转化成字符串）
-     * Param     :   inputStream服务器的响应输入流
-     */
-//    public static String dealResponseResult(InputStream inputStream) {
-//        String resultData = null;      //存储处理结果
-//        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-//        byte[] data = new byte[1024];
-//        int len = 0;
-//        try {
-//            while((len = inputStream.read(data)) != -1) {
-//                byteArrayOutputStream.write(data, 0, len);
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        resultData = new String(byteArrayOutputStream.toByteArray());
-//        return resultData;
-//    }
-
     @Override
     public void login(final String schoolID, final String cardID, final LoginFinished listener) {
-        new Handler().post(new Runnable() {
-            @Override
-            public void run() {
-                try {
                     params = new HashMap<String, String>();
                     params.put("stuNum", schoolID);
                     params.put("idNum", cardID);
-                    JSONObject jsonObject = new JSONObject(sendHttpPost("https://wx.idsbllp.cn/api/verify", params));
-                    int status = jsonObject.getInt("status");
-                    final String info = jsonObject.getString("info");
-                    if (status == 200) {
-                        JSONObject data = jsonObject.getJSONObject("data");
-                        String stuNum1 = data.getString("stuNum");
-                        String idNum1 = data.getString("idNum");
-                        Log.d(TAG, "onFinish: " + stuNum1 + idNum1);
-                        if (schoolID.equals(stuNum1) && cardID.equals(idNum1)) {
-                            listener.onSuccess();
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                JSONObject jsonObject;
+                                int status;
+                                String response = sendHttpPost("https://wx.idsbllp.cn/api/verify", params);
+                                if (response != null) {
+                                    Log.d(TAG, response);
+                                    jsonObject = new JSONObject(response);
+                                    status = jsonObject.getInt("status");
+                                Log.d(TAG, status + "");
+                                final String info = jsonObject.getString("info");
+                                if (status == 200) {
+                                    JSONObject data = jsonObject.getJSONObject("data");
+                                    final String stuNum1 = data.getString("stuNum");
+                                    final String idNum1 = data.getString("idNum");
+                                    Log.d(TAG, "onFinish: " + stuNum1 + idNum1);
+                                    Handler handler = new Handler(Looper.getMainLooper()){
+                                        @Override
+                                        public void handleMessage(Message msg){
+                                            if (schoolID.equals(stuNum1) && cardID.equals(idNum1)) {
+                                                listener.onSuccess();
+                                            }
+                                        }
+                                    };
+                                    handler.sendEmptyMessage(1);
+                                }else {
+                                    Handler handler = new Handler(Looper.getMainLooper()) {
+                                        @Override
+                                        public void handleMessage(Message msg) {
+                                            listener.onFailure();
+                                        }
+                                    };
+                                    handler.sendEmptyMessage(1);
+                                }
+                                }else {
+                                    Handler handler = new Handler(Looper.getMainLooper()) {
+                                        @Override
+                                        public void handleMessage(Message msg) {
+                                            listener.onFailure();
+                                        }
+                                    };
+                                    handler.sendEmptyMessage(1);
+                                }
+                            }catch (Exception e){
+                                Log.e(TAG,e.toString());
+                            }
                         }
-                    } else {
-                        listener.onFailure();
-                    }
-                } catch (Exception e) {
-                    listener.onFailure();
-                    e.printStackTrace();
-                }
-            }
-        });
+                    }).start();
     }
 }
